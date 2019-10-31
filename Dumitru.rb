@@ -1,6 +1,7 @@
 require 'discordrb'
+require 'discordrb/webhooks'
 
-TOKEN = 'NjI5NzcwNDg1NTE2OTkyNTI4.XbMVLQ.o2hkCEvTmBYB62t0S3irHm7TtPM'
+TOKEN = 'NjI5NzcwNDg1NTE2OTkyNTI4.Xbsf3Q.hIU6Zor0LerDrgYKQBlNNeBXF6Y'
 CLIENTID = '629770485516992528'
 GENERAL = '624601637545050114'
 GENERAL2 = '638834555780071442'
@@ -134,6 +135,10 @@ bot.message do |event|
     lastDigitDay = day.to_i % 10
     numeLuna = monthName(month.to_i)
 
+    if hour.to_i > 12
+      actuallHour = hour.to_i - 12
+    end
+
     case lastDigitDay
     when 1
       sufix = 'st'
@@ -146,22 +151,68 @@ bot.message do |event|
     end
 
     case arg1
-    when 'year'
+    when 'year', 'an'
       event.respond "The year is #{year}"
-    when 'month'
+    when 'month', 'luna'
       event.respond "The month is #{month} (#{numeLuna})"
-    when 'day'
+    when 'day', 'zi'
       event.respond "Today is the #{day + sufix}"
-    when 'hour'
-      event.respond "It's #{hour} o'clock"
-    when 'minute'
+    when 'hour', 'ora'
+      if hour.to_i > 12
+        event.respond "It's #{actuallHour} o'clock, or #{hour}"
+      else
+        event.respond "It's #{hour} o'clock"
+      end
+    when 'minute', 'minut'
       event.respond "The minute is #{minute}"
-    when 'second'
+    when 'second', 'secunda'
       event.respond "The second right now is #{second}"
     else
       event.respond "The time is #{time}"
     end
 
+  end
+
+  # help or info #
+  if msg === 'info' || msg === 'help'
+    event.send_embed do |embed|
+      embed.title = 'Commands'
+      embed.description =
+        "The prefix for my commands is `$` \n
+        - `help` or `info` will send this embed \n
+        - `hello` \n
+        - `random` with 1, 2 or no arguments \n
+        - `time` ( specify day, minute, year, etc; leave it blank for full time ) \n
+        - `guess` a random number and specify a secret number range \n"
+      embed.timestamp = Time.now
+      embed.color = '#0080FF'
+    end
+  end
+
+  # GUESS COMMAND #
+  if msg === 'guess'
+
+    if arg1 == nil
+      event.respond "Enter an argument that will be the secret number range"
+    else
+      magic = rand(1..argNum1)
+      score = argNum1
+
+      event.user.await(:guess) do |guess_event|
+        guess = guess_event.message.content.to_i
+
+        if guess == magic
+          guess_event.respond "You win! The secret number was #{magic}"
+          guess_event.respond "You scored #{score} / #{argNum1}"
+        else
+          guess_event.respond(guess > magic ? 'too high' : 'too low')
+          score -= 1
+          false
+        end
+
+      end
+      event.respond "Guess a number between 1 and #{argNum1}"
+    end
   end
 
 end
